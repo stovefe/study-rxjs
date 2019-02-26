@@ -2,7 +2,7 @@
 Study and share RxJS.
 
 ## 스터디 목표
-- Quick Start RxJS 책 끝내기
+Quick Start RxJS 책 끝내기
 
 ## 스터디 계획
 | 회차 |   일자   | 내용                                                         |      |
