@@ -1,4 +1,4 @@
-# RxJS Quick Start 책 정리
+# RxJS Quick Start, 책 정리
 
 ## RxJS를 시작하기 전에
 
