@@ -1,0 +1,27 @@
+{
+  "name": "study-rxjs",
+  "version": "1.0.0",
+  "description": "Study and share RxJS.",
+  "main": "index.js",
+  "scripts": {
+    "4": "babel-node traning/4",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stovefe/study-rxjs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stovefe/study-rxjs/issues"
+  },
+  "homepage": "https://github.com/stovefe/study-rxjs#readme",
+  "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@babel/node": "^7.2.2",
+    "@babel/preset-env": "^7.3.4",
+    "rxjs": "^6.4.0"
+  }
+}
