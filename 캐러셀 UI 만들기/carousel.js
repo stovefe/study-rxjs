@@ -1,5 +1,8 @@
-const { fromEvent } = rxjs;
-const { map, switchMap, takeUntil, take, first } = rxjs.operators;
+const { fromEvent, merge, of, defer, animationFrameScheduler, interval, concat } = rxjs;
+const { map, switchMap, takeUntil, reduce, share, scan, first, takeWhile, startWith, withLatestFrom } = rxjs.operators;
+
+const THRESHOLD = 30;
+const DEFAULT_DURATION = 300;
 
 const $view = document.getElementById("carousel");
 const $container = $view.querySelector(".container");
@@ -24,6 +27,24 @@ function toPos(obs$) {
     );
 }
 
+function animation(from, to, duration) {
+    return defer(() => {
+        const scheduler = animationFrameScheduler;
+        const start = scheduler.now();
+        const interval$ = interval(0, scheduler).pipe(
+            map(() => (scheduler.now() - start) / duration),
+            takeWhile(rate => rate < 1)
+        );
+        return concat(interval$, of(1)).pipe(
+            map(rate => from + (to - from) * rate)
+        );
+    });
+}
+
+function translateX(posX) {
+    $container.style.transform = `translate3d(${posX}px, 0, 0)`;
+}
+
 // (1)map: start$의 데이터를 변경
 const drag$ = start$.pipe(
     // map(start => move$.pipe( 
@@ -36,13 +57,66 @@ const drag$ = start$.pipe(
     // switchMap(start => move$.pipe(takeUntil(end$))) // (5) 기존 데이터를 자동 종료하기 위해 (4)를 switchMap으로 변경
     switchMap(start => {
         return move$.pipe(
-            map(move => move - start), takeUntil(end$)
+            map(move => move - start),
+            takeUntil(end$)
         );
-    })
+    }),
+    share(),
+    map(distance => ({distance}))
 );
+// drag$.subscribe(distance => console.log("start$와 move$의 차이값 ", distance));
 
-drag$.subscribe(distance => console.log("start$와 move$의 차이값 ", distance));
+
+// let viewWidth = $view.clientWidth;
+const size$ = fromEvent(window, "resize").pipe(
+    startWith(0),   // 맨 초기 뷰 사이즈르 전달하기 위해 의미없는 값인 0을 전달함
+    map(event => $view.clientWidth)
+);
+// size$.subscribe(width => console.log("view의 넓이", width));
+
 
 const drop$ = drag$.pipe(
-    switchMap(drag => end$.pipe(first()))   //take 를 적용하여 한번 발생했을때 end$데이터 발생을 중지하도록
+    switchMap(drag => {
+        return end$.pipe(
+            map(event => drag),
+            first()    //take 를 적용하여 한번 발생했을때 end$데이터 발생을 중지하도록
+        );   
+    }),
+    withLatestFrom(size$, (drag, size) => {
+        return { ...drag, size };
+    })
 );
+// drop$.subscribe(array => console.log("drop", array));
+
+const carousel$ = merge(drag$, drop$).pipe(
+    scan((store, {distance, size}) => {
+        const updateStore = {
+            from: -(store.index * store.size) + distance
+        };
+
+        if (size === undefined) {
+            updateStore.to = updateStore.from;
+        }
+        else {
+            let tobeIndex = store.index;
+            if (Math.abs(distance) >= THRESHOLD) {
+                tobeIndex = distance < 0 ? Math.min(tobeIndex + 1, PANEL_COUNT - 1) : Math.max(tobeIndex -1, 0);
+            }
+            updateStore.index = tobeIndex;
+            updateStore.to = -(tobeIndex * size);
+            updateStore.size = size;
+        }
+        return { ...store, ...updateStore };
+    }, {
+        from: 0,
+        to: 0,
+        index: 0,
+        size: 0
+    }),
+    switchMap(({from, to}) => from === to ? of(to) : animation(from, to, DEFAULT_DURATION))
+);
+
+carousel$.subscribe(pos => {
+    console.log("캐러셀 데이터", pos);
+    translateX(pos);
+});
