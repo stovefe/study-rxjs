@@ -1,5 +1,5 @@
 const { fromEvent } = rxjs;
-const { map, switchMap, takeUntil } = rxjs.operators;
+const { map, switchMap, takeUntil, take, first } = rxjs.operators;
 
 const $view = document.getElementById("carousel");
 const $container = $view.querySelector(".container");
@@ -42,3 +42,7 @@ const drag$ = start$.pipe(
 );
 
 drag$.subscribe(distance => console.log("start$와 move$의 차이값 ", distance));
+
+const drop$ = drag$.pipe(
+    switchMap(drag => end$.pipe(first()))   //take 를 적용하여 한번 발생했을때 end$데이터 발생을 중지하도록
+);
